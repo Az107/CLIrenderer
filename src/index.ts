@@ -1,5 +1,5 @@
 import { linkSync } from 'fs';
-import {Point,Line,LineType,Rectangle,Form, Triangle} from './forms';
+import {Point,Line,LineType,Rectangle,Shape, Triangle} from './Shapes';
 
 
 enum Colors {
@@ -16,6 +16,16 @@ enum Colors {
 
 }
 
+class InputHandler {
+    
+
+    static getInput() {
+        process.stdin.setRawMode(true);
+        process.stdin.resume();
+        process.stdin.on('data', () => process.exit());
+    }
+}
+
 class Render {
     constructor () {
         console.clear();
@@ -25,7 +35,41 @@ class Render {
         process.stdout.write(`\u001b[${point.x};${point.y}H`);  
     }
 
-    renderPoint(point: Point, color = Colors.White,  character = '█',) {
+    private colorHexToEsc(color: string) {
+        color = color.toLowerCase();
+        switch (color) {
+            case '#000000':
+            case 'black':
+                return Colors.Black;
+            case '#ff0000':
+            case 'red':
+                return Colors.Red;
+            case '#00ff00':
+            case 'green':
+                return Colors.Green;
+            case '#ffff00':
+            case 'yellow':
+                return Colors.Yellow;
+            case '#0000ff':
+            case 'blue':
+                return Colors.Blue;
+            case '#ff00ff':
+            case 'magenta':
+                return Colors.Magenta;
+            case '#00ffff':
+            case 'cyan':
+                return Colors.Cyan;
+            case '#ffffff':
+            case 'white':
+                return Colors.White;
+            case 'default':
+                return Colors.Default;
+            case 'reset':
+                return Colors.Reset;
+        }
+    }
+
+    renderPoint(point: Point, color = Colors.White, character = '█',) {
         this.setCursor(point);
         process.stdout.write(color + character + Colors.Reset);
     }
@@ -35,9 +79,10 @@ class Render {
         points.forEach(point => this.renderPoint(point,color));
     }
 
-    renderForm(form: Form, color = Colors.White) {
-        const lines = form.getLines();
-        lines.forEach(line => this.renderLine(line,color));
+    renderForm(shape: Shape) {
+        const lines = shape.getLines();
+        lines.forEach(line => this.renderLine(line,this.colorHexToEsc(shape.color)));
+        shape.children.forEach(child => this.renderForm(child));
     }
 
     renderText(text: string, point: Point, color = Colors.White) {
@@ -47,28 +92,20 @@ class Render {
 }
 
 const render = new Render();
-render.renderForm(new Rectangle(new Point(0,0),100,100,true), Colors.White);
 
-function spainFlag() {
-    render.renderForm(new Rectangle(new Point(2, 5),20,8,true), Colors.Red);
-    render.renderForm(new Rectangle(new Point(4, 5),20,4,true), Colors.Yellow);
+let rectangle = new Rectangle(new Point(1,1),20,10,"Green",true);
+let rectangle2 = new Rectangle(new Point(1,1),11,6);
+let triangle = new Triangle(new Point(1,1),new Point(5,1),new Point(1,6),"Blue");
+let triangle2 = new Triangle(new Point(1,10),new Point(5,10),new Point(5,5),"Blue");
 
-}
+rectangle.addChild(rectangle2);
+rectangle2.addChild(triangle);
+rectangle2.addChild(triangle2);
+render.renderForm(rectangle);
 
-function ukranieFlag() {
-    render.renderForm(new Rectangle(new Point(2, 5),20,3,true), Colors.Blue);
-    render.renderForm(new Rectangle(new Point(6, 5),20,3,true), Colors.Yellow);
-}
-
-
-
-spainFlag();
 
 // render.renderForm(new Triangle(new Point(2, 30), new Point(11, 30), new Point(2, 50), true));
 
 
-
+InputHandler.getInput();
 // wait for user input
-process.stdin.setRawMode(true);
-process.stdin.resume();
-process.stdin.on('data', () => process.exit());
