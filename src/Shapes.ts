@@ -6,9 +6,14 @@ export class Point {
         this.y = y;
     }
 
-    sumPoint(point: Point) {
+    addPoint(point: Point) {
         return new Point(this.x + point.x, this.y + point.y);
-    }  
+    }
+
+    subPoint(point: Point) {
+        return new Point(this.x - point.x, this.y - point.y);
+    }
+
 
 }
 
@@ -68,28 +73,56 @@ export class Line {
 }
 
 
-export interface Shape {
+interface IShape {
     getLines(): Line[];
     isFilled: boolean;
-    children: Shape[];
+    children: IShape[];
     position: Point;
     color: string;
+    refresh(): void;
+    addChild(shape: IShape): void;
 
 }
 
-export class Rectangle implements Shape {
-    position: Point;
-    height: number;
-    width: number;
-    isFilled: boolean = false;
-    children: Shape[];
-    color: string;
-
+export class Shape implements IShape {
     addChild(child: Shape) {
-        child.position = child.position.sumPoint(this.position);
+        child.position = child.position.addPoint(this.position);
+        child.refresh();
         this.children.push(child);
     }
 
+    refresh() {
+        this.children.forEach(child => {
+            child.position = child.position.addPoint(this.position.subPoint(new Point(1, 1)));
+            child.refresh()
+        });
+    }
+
+    getLines(): Line[] {
+        throw new Error("Method not implemented.");
+    }
+    isFilled: boolean;
+    children: IShape[];
+    position: Point;
+    color: string;
+
+
+    constructor(position: Point, color: string, isFilled: boolean) {
+        this.position = position;
+        this.color = color;
+        this.isFilled = isFilled;
+        this.children = [];
+    }
+    
+}
+
+
+
+
+
+export class Rectangle extends Shape {
+    height: number;
+    width: number;
 
     getLines(): Line[] {
         const lines: Line[] = [];
@@ -108,57 +141,94 @@ export class Rectangle implements Shape {
     }
     
     constructor(position: Point, width: number, height: number,color = "white", isFilled = false) {
-        this.position = position;
+        super(position, color, isFilled);
         this.height = height;
         this.width = width;
-        this.isFilled = isFilled;
-        this.children = [];
-        this.color = color;
     }
 
 }
 
-export class Triangle implements Shape {
-    position = new Point(0, 0);
+export class Triangle extends Shape {
     a: Point;
     b: Point;
     c: Point;
-    isFilled: boolean = false;
-    children: Shape[];
-    color: string;
-
-    addChild(child: Shape) {
-        
-        this.children.push(child);
-    }
-
     
     getLines(): Line[] {
         const lines: Line[] = [];
-        this.a = this.a.sumPoint(this.position);
-        this.b = this.b.sumPoint(this.position);
-        this.c = this.c.sumPoint(this.position);
+        this.a = this.a.addPoint(this.position);
+        this.b = this.b.addPoint(this.position);
+        this.c = this.c.addPoint(this.position);
         lines.push(new Line(this.a, this.b));
         lines.push(new Line(this.b, this.c));
         lines.push(new Line(this.c, this.a));
         if (this.isFilled) {
-            
+
         }
         return lines;
     }
 
-
     constructor(a: Point, b: Point, c: Point,color = "white", isFilled = false) {
+        super(new Point(0, 0), color, isFilled);
         this.a = a;
         this.b = b;
         this.c = c;
-        this.isFilled = isFilled;
         this.children = [];
-        this.color = color;
-
 
     }
 }
 
+export class Circle extends Shape {
+    children: Shape[];
+    radius: number;
+    diameter: number;
+    
+    getLines(): Line[] {
+        const lines: Line[] = [];
+        let initPoint = new Point(this.position.x, this.position.y);
+        for (let i = 0; i < this.radius; i++) {
+            initPoint.x++;
+            let ix = Math.trunc((this.radius - i) / 2);
+            let iy = Math.trunc((this.diameter - i) / 2);
+
+            const iPoint = new Point(initPoint.x + ix , initPoint.y + iy);
+            const jPoint = new Point(initPoint.x + ix , initPoint.y + iy + i + 1 );
+            const line = new Line(iPoint, jPoint);
+            lines.push(line);
+        }
+        for (let i = 1; i < this.radius; i++) {
+            let ix = Math.trunc((this.radius - i) / 2);
+            let iy = Math.trunc((this.diameter - i) / 2);
+
+            const iPoint = new Point(initPoint.x + ix , initPoint.y + iy);
+            const jPoint = new Point(initPoint.x + ix , initPoint.y + iy + i);
+            const line = new Line(iPoint, jPoint);
+            lines.push(line);
+             
+        }
+
+        return lines;
+    }
+
+
+    constructor(radius: number,position: Point, color: string, isFilled: boolean) {
+        super(position, color, isFilled);
+        this.children = [];
+        this.radius = radius;
+        this.diameter = radius * 2;
+    }
+    
+
+}
+
+
+// export class Text extends Shape {
+
+//     text: string;
+//     constructor(position: Point, text: string, color: string) {
+//         super(position, color, false);
+//         this.children = [];
+//         this.text = text;
+//     }
+// }
 
 

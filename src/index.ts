@@ -1,6 +1,6 @@
 import { linkSync } from 'fs';
-import {Point,Line,LineType,Rectangle,Shape, Triangle} from './Shapes';
-
+import {Point,Line,LineType,Rectangle,Shape, Circle} from './Shapes';
+import * as readLine from 'readline';
 
 enum Colors {
     Black = "\x1b[30m",
@@ -16,17 +16,21 @@ enum Colors {
 
 }
 
-class InputHandler {
+export class InputHandler {
+    
     
 
-    static getInput() {
+    static getInput(callback: (input: string) => void): void {
+        readLine.emitKeypressEvents(process.stdin);
         process.stdin.setRawMode(true);
         process.stdin.resume();
-        process.stdin.on('data', () => process.exit());
+        process.stdin.on('keypress', (character,key) => {
+            callback(key.name);
+        });
     }
 }
 
-class Render {
+export class Renderer {
     constructor () {
         console.clear();
     }
@@ -79,33 +83,18 @@ class Render {
         points.forEach(point => this.renderPoint(point,color));
     }
 
-    renderForm(shape: Shape) {
+    renderShape(shape: Shape) {
         const lines = shape.getLines();
         lines.forEach(line => this.renderLine(line,this.colorHexToEsc(shape.color)));
-        shape.children.forEach(child => this.renderForm(child));
+        shape.children.forEach(child => this.renderShape(child));
     }
 
     renderText(text: string, point: Point, color = Colors.White) {
         this.setCursor(point);
         process.stdout.write(color + text + Colors.Reset);
     }
+
+    public clear() {
+        console.clear();
+    }
 }
-
-const render = new Render();
-
-let rectangle = new Rectangle(new Point(1,1),20,10,"Green",true);
-let rectangle2 = new Rectangle(new Point(1,1),11,6);
-let triangle = new Triangle(new Point(1,1),new Point(5,1),new Point(1,6),"Blue");
-let triangle2 = new Triangle(new Point(1,10),new Point(5,10),new Point(5,5),"Blue");
-
-rectangle.addChild(rectangle2);
-rectangle2.addChild(triangle);
-rectangle2.addChild(triangle2);
-render.renderForm(rectangle);
-
-
-// render.renderForm(new Triangle(new Point(2, 30), new Point(11, 30), new Point(2, 50), true));
-
-
-InputHandler.getInput();
-// wait for user input
